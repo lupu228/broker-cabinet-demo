@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Кабинет брокера — демо каталога</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#1c1f24; --ink-2:#2a2e35; --paper:#f6f4f0; --card:#ffffff;
+    --line:#e3dfd7; --gold:#a8812f; --gold-dark:#8a6a24; --muted:#6b6459;
+    --ok:#2f7d5a; --busy:#b1453b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter', system-ui, sans-serif; background:var(--paper); color:var(--ink); }
+  h1,h2,h3,.brand { font-family:'Unbounded', sans-serif; }
+  button { font-family:inherit; cursor:pointer; }
+
+  /* topbar */
+  .topbar { background:var(--ink); color:#efece6; }
+  .topbar-inner { max-width:1280px; margin:0 auto; padding:18px 28px; display:flex; align-items:center; justify-content:space-between; }
+  .brand { font-size:19px; font-weight:700; letter-spacing:-0.01em; }
+  .brand span { color:var(--gold); }
+  .loc-select { font-size:14px; color:#c9c3b6; display:flex; align-items:center; gap:8px; }
+  .loc-select select { background:#2a2e35; color:#efece6; border:1px solid #3c414a; border-radius:8px; padding:8px 12px; font-size:14px; }
+
+  /* filter bar */
+  .filters { background:var(--card); border-bottom:1px solid var(--line); }
+  .filters-inner { max-width:1280px; margin:0 auto; padding:18px 28px; display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; }
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .field label { font-size:12px; color:var(--muted); font-weight:500; }
+  .field input { border:1px solid var(--line); border-radius:9px; padding:10px 12px; font-size:14px; width:160px; }
+  .vat-toggle { display:flex; align-items:center; gap:10px; font-size:14px; margin-left:auto; }
+  .switch { width:42px; height:24px; background:var(--line); border-radius:999px; position:relative; border:none; }
+  .switch.on { background:var(--gold); }
+  .switch::after { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:transform .15s; }
+  .switch.on::after { transform:translateX(18px); }
+
+  /* view tabs */
+  .views { max-width:1280px; margin:0 auto; padding:24px 28px 0; display:flex; gap:8px; }
+  .view-btn { padding:10px 18px; border-radius:10px 10px 0 0; border:1px solid var(--line); border-bottom:none; background:#efece5; color:var(--muted); font-size:14px; font-weight:600; }
+  .view-btn.active { background:var(--card); color:var(--ink); }
+
+  main { max-width:1280px; margin:0 auto; padding:0 28px 80px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:0 12px 12px 12px; padding:28px; min-height:420px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+  @keyframes viewIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .view { display:none; }
+  .view.active { display:block; animation:viewIn .3s cubic-bezier(.19,1,.22,1) both; }
+  @keyframes priceFlash { 0% { color:var(--gold); } 100% { color:inherit; } }
+  .price-flash { animation:priceFlash .5s ease-out; }
+
+  /* grid view */
+  .grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; }
+  .block-card { border:1px solid var(--line); border-radius:14px; overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s; background:#fff; }
+  .block-card:hover { border-color:var(--gold); transform:translateY(-2px); }
+  .block-thumb { aspect-ratio:16/10; background:linear-gradient(135deg,#e9e3d6,#f6f4f0); display:grid; place-items:center; color:#a39a86; font-size:12px; font-weight:600; letter-spacing:0.03em; position:relative; }
+  .status-pill { position:absolute; top:10px; left:10px; font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; background:#fff; }
+  .status-pill.available { color:var(--ok); }
+  .status-pill.rented { color:var(--busy); }
+  .block-body { padding:16px; }
+  .block-body h3 { font-size:16px; }
+  .block-meta { margin-top:4px; font-size:13px; color:var(--muted); }
+  .block-stats { margin-top:12px; display:flex; gap:16px; font-size:13px; }
+  .block-stats b { font-family:'Unbounded'; font-size:15px; }
+  .block-price { margin-top:12px; font-size:17px; font-weight:700; font-family:'Unbounded'; color:var(--ink); }
+  .block-price small { font-weight:500; font-size:12px; color:var(--muted); }
+
+  /* plan view */
+  .plan-wrap { display:flex; gap:24px; }
+  .plan-stage { flex:1; border:1px solid var(--line); border-radius:12px; background:#efece5; position:relative; aspect-ratio:16/10; overflow:hidden; padding:16px; }
+  .plan-toolbar { position:absolute; top:12px; right:12px; display:flex; gap:6px; z-index:2; }
+  .plan-toolbar button { width:32px; height:32px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:16px; }
+  .floor-tabs { display:flex; gap:8px; margin-bottom:14px; }
+  .floor-tab { padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:13px; font-weight:600; color:var(--muted); }
+  .floor-tab.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .plan-legend { margin-top:14px; display:flex; gap:20px; font-size:13px; color:var(--muted); }
+  .legend-dot { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; }
+  polygon.room { stroke:#4a4538; stroke-width:2.5; cursor:pointer; transition:fill .2s, fill-opacity .2s, transform .2s; transform-box:fill-box; transform-origin:center; }
+  polygon.room.available { fill:#4f9d72; fill-opacity:.22; animation:blockPulse 2.8s ease-in-out infinite; }
+  polygon.room.available:hover { fill-opacity:.4; transform:scale(1.012); animation-play-state:paused; }
+  polygon.room.rented { fill:#b1453b; fill-opacity:.18; cursor:not-allowed; }
+  @keyframes blockPulse { 0%,100% { fill-opacity:.22; } 50% { fill-opacity:.1; } }
+  @media (prefers-reduced-motion: reduce) { polygon.room.available { animation:none; } }
+  .room-label { font-family:'Inter'; font-size:13px; font-weight:600; fill:#3a3530; pointer-events:none; }
+  .room-sub { font-family:'Inter'; font-size:10px; fill:#948c7c; pointer-events:none; }
+  .plan-wall { fill:none; stroke:#2a2e35; }
+  .plan-corridor { fill:#efece5; stroke:#c9c3b6; stroke-width:1; stroke-dasharray:4 4; }
+  .plan-core { fill:#e3ddd0; stroke:#4a4538; stroke-width:2; }
+  .plan-window { stroke:#8a8270; stroke-width:3; }
+  .plan-side { width:260px; }
+  .plan-side h4 { font-size:14px; margin-bottom:10px; }
+  .plan-side .hint { font-size:13px; color:var(--muted); line-height:1.5; }
+
+  /* table view */
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:left; padding:12px 10px; border-bottom:2px solid var(--ink); font-size:12px; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted); cursor:pointer; }
+  td { padding:12px 10px; border-bottom:1px solid var(--line); }
+  tr:hover td { background:#faf8f4; }
+  .xlsx-btn { margin-bottom:14px; padding:10px 18px; border-radius:9px; border:1px solid var(--line); background:#fff; font-size:13px; font-weight:600; display:inline-flex; gap:8px; align-items:center; }
+
+  /* modal */
+  .overlay {
+    position:fixed; inset:0; background:rgba(28,31,36,0); display:none; align-items:center; justify-content:center;
+    z-index:50; padding:20px; transition:background .25s ease;
+  }
+  .overlay.open { display:flex; background:rgba(28,31,36,0.55); }
+  .modal {
+    background:#fff; border-radius:16px; max-width:780px; width:100%; max-height:88vh; overflow-y:auto;
+    opacity:0; transform:translateY(14px) scale(.98); transition:opacity .28s cubic-bezier(.19,1,.22,1), transform .28s cubic-bezier(.19,1,.22,1);
+  }
+  .overlay.open .modal { opacity:1; transform:translateY(0) scale(1); }
+  .modal-gallery { aspect-ratio:16/8; background:linear-gradient(135deg,#e9e3d6,#f6f4f0); display:grid; place-items:center; color:#a39a86; font-size:13px; font-weight:600; position:relative; }
+  .modal-close { position:absolute; top:14px; right:14px; width:34px; height:34px; border-radius:50%; background:rgba(28,31,36,0.6); color:#fff; border:none; font-size:16px; }
+  .modal-counter { position:absolute; bottom:14px; right:16px; background:rgba(28,31,36,0.6); color:#fff; font-size:12px; padding:4px 10px; border-radius:999px; }
+  .modal-body { padding:28px; }
+  .modal-body h2 { font-size:22px; }
+  .modal-body .addr { color:var(--muted); font-size:14px; margin-top:4px; }
+  .modal-stats { display:flex; gap:28px; margin-top:20px; }
+  .modal-stats div b { font-family:'Unbounded'; font-size:22px; display:block; }
+  .modal-stats div span { font-size:12px; color:var(--muted); }
+  .modal-price { margin-top:22px; padding-top:20px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; }
+  .modal-price .amt { font-family:'Unbounded'; font-size:26px; font-weight:700; }
+  .modal-actions { margin-top:22px; display:flex; gap:12px; }
+  .btn-primary { background:var(--gold); color:#fff; border:none; padding:13px 22px; border-radius:10px; font-weight:600; font-size:14px; }
+  .btn-secondary { background:#fff; border:1px solid var(--line); padding:13px 22px; border-radius:10px; font-weight:600; font-size:14px; }
+
+  @media (max-width: 860px) {
+    .grid { grid-template-columns:1fr 1fr; }
+    .plan-wrap { flex-direction:column; }
+    .plan-side { width:auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">Кабинет <span>Брокера</span></div>
+    <div class="loc-select">Площадка:
+      <select><option>БЦ «Меридиан», все этажи</option></select>
+    </div>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="filters-inner">
+    <div class="field"><label>Рабочие места</label><input type="number" placeholder="например, 25"></div>
+    <div class="field"><label>Бюджет, ₽/мес</label><input type="text" placeholder="например, 800 000"></div>
+    <div class="vat-toggle">НДС 22%
+      <button class="switch" id="vatSwitch" onclick="toggleVat()"></button>
+    </div>
+  </div>
+</div>
+
+<div class="views">
+  <button class="view-btn active" onclick="showView('grid', this)">Каталог</button>
+  <button class="view-btn" onclick="showView('plan', this)">На плане</button>
+  <button class="view-btn" onclick="showView('table', this)">Таблица</button>
+</div>
+
+<main>
+  <div class="panel">
+
+    <div class="view active" id="view-grid">
+      <div class="grid" id="gridContainer"></div>
+    </div>
+
+    <div class="view" id="view-plan">
+      <div class="floor-tabs" id="floorTabs"></div>
+      <div class="plan-wrap">
+        <div class="plan-stage">
+          <div class="plan-toolbar">
+            <button onclick="zoomPlan(1.3)">+</button>
+            <button onclick="zoomPlan(0.77)">−</button>
+            <button onclick="resetZoom()">⟳</button>
+          </div>
+          <svg id="floorSvg" viewBox="0 0 800 500" style="width:100%;height:100%;transform-origin:center;transition:transform .2s;"></svg>
+        </div>
+        <div class="plan-side">
+          <h4>Как это работает</h4>
+          <p class="hint">Клик по блоку на плане открывает карточку. Занятые блоки выделены красным и недоступны для выбора. Зелёные — свободны.</p>
+          <div class="plan-legend" style="flex-direction:column; gap:10px; margin-top:18px;">
+            <div><span class="legend-dot" style="background:#cfe3d7;"></span>Свободно</div>
+            <div><span class="legend-dot" style="background:#e9d4d1;"></span>Занято</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-table">
+      <button class="xlsx-btn">⬇ Экспорт в Excel</button>
+      <table>
+        <thead>
+          <tr><th>Блок</th><th>Этаж</th><th>Места</th><th>м²</th><th>Ставка/место</th><th>Сумма/мес</th><th>Статус</th></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</main>
+
+<div class="overlay" id="overlay" onclick="closeModalBg(event)">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+const blocks = [
+  {id:'b17', floor:14, name:'Блок 17', seats:22, area:148, priceSeatNet:28000, status:'available', poly:'60,40 220,40 220,160 60,160'},
+  {id:'b18', floor:14, name:'Блок 18', seats:14, area:96, priceSeatNet:29500, status:'available', poly:'230,40 360,40 360,160 230,160'},
+  {id:'b19', floor:14, name:'Блок 19', seats:30, area:205, priceSeatNet:26500, status:'rented', poly:'370,40 560,40 560,160 370,160'},
+  {id:'b20', floor:14, name:'OpenSpace 20', seats:45, area:310, priceSeatNet:24000, status:'available', poly:'60,180 360,180 360,320 60,320'},
+  {id:'b21', floor:14, name:'Блок 21', seats:8, area:54, priceSeatNet:32000, status:'available', poly:'370,180 480,180 480,320 370,320'},
+  {id:'b05', floor:9, name:'Блок 5', seats:18, area:120, priceSeatNet:27000, status:'available', poly:'60,40 260,40 260,180 60,180'},
+  {id:'b06', floor:9, name:'Блок 6', seats:12, area:82, priceSeatNet:29000, status:'rented', poly:'270,40 400,40 400,180 270,180'},
+  {id:'b07', floor:9, name:'Блок 7', seats:26, area:176, priceSeatNet:25500, status:'available', poly:'60,190 320,190 320,330 60,330'},
+];
+const VAT = 1.22;
+let vatOn = false;
+let activeFloor = 14;
+let zoom = 1;
+
+function rub(n){ return Math.round(n).toLocaleString('ru-RU'); }
+function price(net){ return vatOn ? net*VAT : net; }
+
+function toggleVat(){
+  vatOn = !vatOn;
+  document.getElementById('vatSwitch').classList.toggle('on', vatOn);
+  renderGrid(); renderTable();
+  document.querySelectorAll('.block-price, td:nth-child(5), td:nth-child(6)').forEach(el=>{
+    el.classList.remove('price-flash'); void el.offsetWidth; el.classList.add('price-flash');
+  });
+}
+
+function showView(name, btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function renderGrid(){
+  const c = document.getElementById('gridContainer');
+  c.innerHTML = blocks.map(b => `
+    <div class="block-card" onclick="openModal('${b.id}')">
+      <div class="block-thumb">
+        <span class="status-pill ${b.status}">${b.status==='available'?'Свободен':'Сдан'}</span>
+        ФОТО БЛОКА
+      </div>
+      <div class="block-body">
+        <h3>${b.name}</h3>
+        <div class="block-meta">${activeFloorLabel(b.floor)} этаж · БЦ «Меридиан»</div>
+        <div class="block-stats">
+          <div><b>${b.seats}</b> мест</div>
+          <div><b>${b.area}</b> м²</div>
+        </div>
+        <div class="block-price">${rub(price(b.priceSeatNet))} ₽<small> / место, ${vatOn?'с НДС':'без НДС'}</small></div>
+      </div>
+    </div>`).join('');
+}
+
+function activeFloorLabel(f){ return f; }
+
+function renderFloorTabs(){
+  const floors = [...new Set(blocks.map(b=>b.floor))].sort((a,b)=>b-a);
+  document.getElementById('floorTabs').innerHTML = floors.map(f =>
+    `<button class="floor-tab ${f===activeFloor?'active':''}" onclick="setFloor(${f})">${f} этаж</button>`).join('');
+}
+function setFloor(f){ activeFloor = f; renderFloorTabs(); renderPlan(); }
+
+function polyCenter(poly){
+  const pts = poly.split(' ').map(p => p.split(',').map(Number));
+  const cx = pts.reduce((s,p)=>s+p[0],0)/pts.length;
+  const cy = pts.reduce((s,p)=>s+p[1],0)/pts.length;
+  return [cx, cy];
+}
+
+function renderPlan(){
+  const svg = document.getElementById('floorSvg');
+  const onFloor = blocks.filter(b=>b.floor===activeFloor);
+
+  // outer shell as a double wall line (floor plate outline)
+  const shell = `
+    <rect class="plan-wall" x="20" y="20" width="700" height="460" stroke-width="8"/>
+    <rect class="plan-wall" x="26" y="26" width="688" height="448" stroke-width="2"/>`;
+
+  // window ticks around the perimeter
+  let windows = '';
+  for (let x = 60; x < 700; x += 48) {
+    windows += `<line class="plan-window" x1="${x}" y1="16" x2="${x+26}" y2="16"/>`;
+    windows += `<line class="plan-window" x1="${x}" y1="484" x2="${x+26}" y2="484"/>`;
+  }
+
+  // corridor connecting the two room bands, plus elevator/stair core in the unused bay
+  const corridor = `<rect class="plan-corridor" x="40" y="163" width="660" height="18"/>
+    <line x1="40" y1="172" x2="700" y2="172" stroke="#c9c3b6" stroke-width="1" stroke-dasharray="3 5"/>`;
+  const core = `<rect class="plan-core" x="590" y="190" width="100" height="110"/>
+    <line x1="590" y1="190" x2="690" y2="300" stroke="#4a4538" stroke-width="1"/>
+    <line x1="690" y1="190" x2="590" y2="300" stroke="#4a4538" stroke-width="1"/>
+    <text x="640" y="320" text-anchor="middle" class="room-sub">лифтовой холл</text>`;
+
+  const rooms = onFloor.map(b => {
+    const [cx, cy] = polyCenter(b.poly);
+    const clickable = b.status==='available' ? `onclick="openModal('${b.id}')"` : '';
+    return `<g ${clickable}>
+      <polygon class="room ${b.status}" points="${b.poly}"><title>${b.name}</title></polygon>
+      <text x="${cx}" y="${cy-4}" text-anchor="middle" class="room-label">${b.name}</text>
+      <text x="${cx}" y="${cy+14}" text-anchor="middle" class="room-sub">${b.area} м² · ${b.seats} мест</text>
+    </g>`;
+  }).join('');
+
+  svg.innerHTML = shell + windows + corridor + core + rooms;
+}
+function zoomPlan(f){ zoom = Math.max(0.6, Math.min(2.5, zoom*f)); document.getElementById('floorSvg').style.transform = `scale(${zoom})`; }
+function resetZoom(){ zoom=1; document.getElementById('floorSvg').style.transform = 'scale(1)'; }
+
+function renderTable(){
+  const sorted = [...blocks].sort((a,b)=>a.floor-b.floor);
+  document.getElementById('tableBody').innerHTML = sorted.map(b => `
+    <tr>
+      <td><b>${b.name}</b></td>
+      <td>${b.floor}</td>
+      <td>${b.seats}</td>
+      <td>${b.area}</td>
+      <td>${rub(price(b.priceSeatNet))} ₽</td>
+      <td>${rub(price(b.priceSeatNet)*b.seats)} ₽</td>
+      <td style="color:${b.status==='available'?'#2f7d5a':'#b1453b'}">${b.status==='available'?'Свободен':'Сдан'}</td>
+    </tr>`).join('');
+}
+
+function openModal(id){
+  const b = blocks.find(x=>x.id===id);
+  document.getElementById('modalContent').innerHTML = `
+    <div class="modal-gallery">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <span class="modal-counter">1 / 4 · ${b.name}</span>
+      ФОТО-ГАЛЕРЕЯ БЛОКА
+    </div>
+    <div class="modal-body">
+      <h2>${b.name}</h2>
+      <div class="addr">БЦ «Меридиан», ${b.floor} этаж, ул. Примерная 10</div>
+      <div class="modal-stats">
+        <div><b>${b.seats}</b><span>рабочих мест</span></div>
+        <div><b>${b.area} м²</b><span>полезная площадь</span></div>
+      </div>
+      <div class="modal-price">
+        <div><div class="amt">${rub(price(b.priceSeatNet))} ₽<small style="font-size:13px;font-weight:500;"> / место</small></div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px;">${vatOn?'с НДС 22%':'без НДС'} · итого ${rub(price(b.priceSeatNet)*b.seats)} ₽/мес</div></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary">Запросить просмотр</button>
+        <button class="btn-secondary">Скачать PDF-презентацию</button>
+      </div>
+    </div>`;
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
+function closeModalBg(e){ if(e.target.id==='overlay') closeModal(); }
+
+renderGrid(); renderFloorTabs(); renderPlan(); renderTable();
+</script>
+</body>
+</html>
