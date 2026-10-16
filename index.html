@@ -129,6 +129,8 @@
 
   @media (max-width: 860px) {
     body { overflow-x:hidden; }
+    .tbl-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .tbl-scroll table { min-width:620px; }
     .topbar-inner { flex-direction:column; align-items:flex-start; gap:10px; padding:16px 20px; }
     .loc-select { width:100%; min-width:0; }
     .loc-select select { width:100%; min-width:0; font-size:13px; text-overflow:ellipsis; }
@@ -206,12 +208,14 @@
 
     <div class="view" id="view-table">
       <button class="xlsx-btn">⬇ Экспорт в Excel</button>
+      <div class="tbl-scroll">
       <table>
         <thead>
           <tr><th>Блок</th><th>Этаж</th><th>Места</th><th>м²</th><th>Ставка/место</th><th>Сумма/мес</th><th>Статус</th></tr>
         </thead>
         <tbody id="tableBody"></tbody>
       </table>
+      </div>
     </div>
 
   </div>
